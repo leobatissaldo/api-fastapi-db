@@ -20,5 +20,7 @@ A FastAPI based REST API with SQLite database persistance using SQLAlchemy ORM.
 ## How to run
 
 Run the script:
+
 pip install -r requirements.txt
+
 uvicorn main:app
