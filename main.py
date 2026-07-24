@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel #data validation, data auto conversion, easy output
+from pydantic import BaseModel, ConfigDict #data validation, data auto conversion, easy output. ConfigDict faz a mesma coisa que class config
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
 from database import SessionLocal, engine
@@ -22,12 +22,13 @@ class TarefaInput(BaseModel):
     titulo: str
 
 class TarefaOutput(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     titulo: str
     concluida: bool
 
-    class Config:
-        from_attributes = True #permite que o Pydantic leia dados de objetos SQLAlchemy, não só de dicionários.
+    #class Config:
+        #from_attributes = True #permite que o Pydantic leia dados de objetos SQLAlchemy, não só de dicionários.
 
 
 @app.post("/tarefas", response_model=TarefaOutput) #response model ignora que tenha retornado campos a mais e só mostra o que é seu equivalente, nesse caso, TarefaOutput
@@ -64,4 +65,4 @@ def concluir_tarefa(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail={"mensagem":"tarefa nao encontrada"})
     
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
