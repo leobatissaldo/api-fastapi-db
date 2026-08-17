@@ -1,0 +1,62 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+# ==========================================
+# ESTÁGIO 1: BUILD (CI) - Já montado para você
+# ==========================================
+- stage: Build
+  displayName: 'Compilar e Gerar Artefato'
+  jobs:
+  - job: BuildJob
+    steps:
+    
+    # 1. Compacta os arquivos gerados (sem criar a pasta /s/)
+    - task: ArchiveFiles@2
+      displayName: 'Compactar Aplicação'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false # Garante que os arquivos ficam na raiz do zip
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+
+    # 2. Publica o .zip para o próximo estágio conseguir usar
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publicar Artefato'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/app.zip'
+        artifact: 'drop'
+
+# ==========================================
+# ESTÁGIO 2: DEPLOY (CD) - Para você praticar
+# ==========================================
+- stage: Deploy
+  displayName: 'Infraestrutura e Deploy'
+  dependsOn: Build # Só roda se o Build passar
+  jobs:
+  - job: DeployJob
+    steps:
+    
+    # Baixa o .zip gerado no estágio anterior
+    - download: current
+      artifact: drop
+
+    - task: AzureCLI@2
+      displayName: 'Criar Infraestrutura via Azure CLI'
+      inputs:
+        azureSubscription: 'SuaConexaoComAzure' # Nome da sua Service Connection
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+      # 1. Criar o Resource Group
+      az group create --name TesteCLI --location eastus
+
+      # 2. Criar o App Service Plan (Linux)
+      az appservice plan create --name plano-basico --resource-group TesteCLI --sku F1 --is-linux
+
+      # 3. Criar o App Service vinculando ao plano
+      az webapp create --resource-group TesteCLI --plan plano-basico --name appservicebatissaldo --runtime "DOTNETCORE|8.0"
