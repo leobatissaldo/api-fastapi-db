@@ -25,5 +25,5 @@ def verificar_token(token: str) -> dict:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
-        None
+        return None
 

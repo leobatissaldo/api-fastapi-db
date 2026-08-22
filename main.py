@@ -28,7 +28,7 @@ def get_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depends
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
     
     email = payload.get("email")
-    usuario = db.scalars(select(Usuario).where(Usuario.email == email))
+    usuario = db.scalars(select(Usuario).where(Usuario.email == email)).first()
     if usuario is None:
         raise HTTPException(status_code=401, detail="Usuario nao encontrado")
     return usuario
@@ -54,6 +54,8 @@ def criar_tarefa(input: TarefaInput, db: Session = Depends(get_db), usuario: Usu
 
 @app.get("/tarefas", response_model=list[TarefaOutput])
 def listar_tarefas(db: Session = Depends(get_db), usuario: Usuario = Depends(get_usuario_atual)):
+    if usuario is None:
+        return HTTPException(status_code=401, detail="Usuário nao está logado")
     return db.query(Tarefa).all()
 
 @app.delete("/tarefas/{id}")
@@ -73,7 +75,7 @@ def concluir_tarefa(id: int, db: Session = Depends(get_db), usuario: Usuario = D
     if tarefa_atualizar:
         tarefa_atualizar.concluida = True
         db.commit()
-        return {"mensagem": "Tarefa excluída com sucesso!"}
+        return {"mensagem": "Tarefa atualizada com sucesso!"}
     else:
         raise HTTPException(status_code=404, detail={"mensagem":"tarefa nao encontrada"})
 
