@@ -6,9 +6,7 @@ pool:
 
 stages:
 
-# ==========================================
-# ESTÁGIO 1: BUILD (CI) - Já montado para você
-# ==========================================
+
 - stage: Build
   displayName: 'Compilar e Gerar Artefato'
   jobs:
@@ -31,32 +29,27 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)/app.zip'
         artifact: 'drop'
 
-# ==========================================
-# ESTÁGIO 2: DEPLOY (CD) - Para você praticar
-# ==========================================
+
 - stage: Deploy
-  displayName: 'Infraestrutura e Deploy'
-  dependsOn: Build # Só roda se o Build passar
+  displayName: 'Deploy do Código'
+  dependsOn: Build
   jobs:
   - job: DeployJob
     steps:
     
-    # Baixa o .zip gerado no estágio anterior
+    # Baixa o .zip gerado no estágio de Build
     - download: current
       artifact: drop
 
     - task: AzureCLI@2
-      displayName: 'Criar Infraestrutura via Azure CLI'
+      displayName: 'Publicar Código no Azure App Service'
       inputs:
-        azureSubscription: 'SuaConexaoComAzure' # Nome da sua Service Connection
+        azureSubscription: '8a7576c7-2b1f-464e-a096-0321e82c2c7a'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-      # 1. Criar o Resource Group
-      az group create --name TesteCLI --location eastus
+          # Configura o comando de inicialização do FastAPI
+          az webapp config set --resource-group TesteCLI --name task-fastapi-db --startup-file "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app"
 
-      # 2. Criar o App Service Plan (Linux)
-      az appservice plan create --name plano-basico --resource-group TesteCLI --sku F1 --is-linux
-
-      # 3. Criar o App Service vinculando ao plano
-      az webapp create --resource-group TesteCLI --plan plano-basico --name appservicebatissaldo --runtime "DOTNETCORE|8.0"
+          # Envia apenas o arquivo do código atualizado
+          az webapp deploy --resource-group TesteCLI --name task-fastapi-db --src-path "$(Pipeline.Workspace)/drop/app.zip" --type zip
