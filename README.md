@@ -17,13 +17,8 @@ A FastAPI based REST API with SQLite database persistance using SQLAlchemy ORM.
 - SQLAlchemy ORM
 - SQLite
 
-## Live Demo
-https://api-fastapi-db-production.up.railway.app/docs
-
 ## How to run
 
 Run the script:
-
 pip install -r requirements.txt
-
 uvicorn main:app
